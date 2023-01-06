@@ -10,7 +10,7 @@ interface Token {
     function mint(address to, uint256 amount) external;
 }
 
-contract MerkleAirdrop is Ownable {
+contract MerkleMultipleAirdrop is Ownable {
 
     Token public immutable token; // @notice Token contract address
     bytes32 public merkleRoot; // @notice Merkle root
