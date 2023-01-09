@@ -28,7 +28,7 @@ contract MultiTokenClaim is Ownable, Pausable, ERC1155Holder {
     * @param uint256 amount : amount of tokens
     * @param bytes32[] calldata merkleProof : merkle proof
     */
-    function claimERC20(address contractAddress, uint256 amount, bytes32[] calldata merkleProof) external whenNotPaused {
+    function claimERC20(address contractAddress, uint256 amount, bytes32[] calldata merkleProof) public whenNotPaused {
         require(IERC20(contractAddress).balanceOf(address(this)) >= amount, "Contract doesn't have enough tokens");
 
         bytes32 node = keccak256(abi.encodePacked(contractAddress, msg.sender, amount));
@@ -50,7 +50,7 @@ contract MultiTokenClaim is Ownable, Pausable, ERC1155Holder {
     * @param uint256 amount : amount of tokens
     * @param bytes32[] calldata merkleProof : merkle proof
     */
-    function claimERC721(address contractAddress, uint256 amount, bytes32[] calldata merkleProof) external whenNotPaused {
+    function claimERC721(address contractAddress, uint256 amount, bytes32[] calldata merkleProof) public whenNotPaused {
         require(IERC721(contractAddress).balanceOf(address(this)) >= amount, "Contract doesn't have enough tokens");
 
         bytes32 node = keccak256(abi.encodePacked(contractAddress, msg.sender, amount));
@@ -78,7 +78,7 @@ contract MultiTokenClaim is Ownable, Pausable, ERC1155Holder {
     * @param uint256 amount : amount of tokens
     * @param bytes32[] calldata merkleProof : merkle proof
     */
-    function claimERC1155(address contractAddress, uint256 tokenId, uint256 amount, bytes32[] calldata merkleProof) external whenNotPaused {
+    function claimERC1155(address contractAddress, uint256 tokenId, uint256 amount, bytes32[] calldata merkleProof) public whenNotPaused {
         require(IERC1155(contractAddress).balanceOf(address(this), tokenId) >= amount, "Contract doesn't have enough tokens");
 
         bytes32 node = keccak256(abi.encodePacked(contractAddress, msg.sender, tokenId, amount));
@@ -92,6 +92,67 @@ contract MultiTokenClaim is Ownable, Pausable, ERC1155Holder {
         IERC1155(contractAddress).safeTransferFrom(address(this), msg.sender, tokenId, claimableAmount, "");
 
         emit ERC1155Claimed(contractAddress, msg.sender, tokenId, claimableAmount);
+    }
+
+    /*
+    * @notice Claim of rewards in batches. Multi tokens can be claimed in one transaction (ERC20/ERC721/ERC1155).
+    * @param address[] calldata contractAddresses : array of contract addresses
+    * @param uint256[] calldata tokenIds : array of token IDs (use for ERC1155, set 0 for ERC20/ERC721)
+    * @param uint256[] calldata amounts : array of amounts
+    * @param bytes32[][] calldata merkleProofs : array of merkle proofs
+    * @param uint8[] calldata tokenTypes : array of token types (0 - ERC20, 1 - ERC721, 2 - ERC1155)
+    */
+    function batchClaim(
+        address[] calldata contractAddresses,
+        uint256[] calldata tokenIds,
+        uint256[] calldata amounts,
+        bytes32[][] calldata merkleProofs,
+        uint8[] calldata tokenTypes
+    ) external whenNotPaused {
+        if (contractAddresses.length != tokenIds.length || contractAddresses.length != amounts.length || contractAddresses.length != merkleProofs.length || contractAddresses.length != tokenTypes.length) {
+            revert("Invalid input data");
+        }
+        for (uint i = 0; i < contractAddresses.length; i++) {
+            if (tokenTypes[i] == 0) {
+                claimERC20(contractAddresses[i], amounts[i], merkleProofs[i]);
+            } else if (tokenTypes[i] == 1) {
+                claimERC721(contractAddresses[i], amounts[i], merkleProofs[i]);
+            } else if (tokenTypes[i] == 2) {
+                claimERC1155(contractAddresses[i], tokenIds[i], amounts[i], merkleProofs[i]);
+            }
+        }
+    }
+
+    /*
+    * @notice Admin function to recover any assets on this contract by address
+    * @param address[] calldata contractAddresses : array of contract addresses
+    * @param address[] calldata toAddress : array of addresses to send assets
+    * @param uint256[][] calldata tokenIds : array of array of token IDs (use for ERC1155, set 0 for ERC20/ERC721)
+    * @param uint8[] calldata tokenTypes : array of token types (0 - ERC20, 1 - ERC721, 2 - ERC1155)
+    */
+    function adminWithdraw(
+        address[] calldata contractAddresses,
+        address[] calldata toAddresses,
+        uint256[][] calldata tokenIds,
+        uint8[] calldata tokenTypes
+    ) external onlyOwner {
+        if (contractAddresses.length != tokenIds.length || contractAddresses.length != tokenTypes.length || contractAddresses.length != toAddresses.length) {
+            revert("Invalid input data");
+        }
+        for (uint i = 0; i < contractAddresses.length; i++) {
+            if (tokenTypes[i] == 0) {
+                IERC20(contractAddresses[i]).transfer(toAddresses[i], IERC20(contractAddresses[i]).balanceOf(address(this)));
+            } else if (tokenTypes[i] == 1) {
+                uint256[] memory tokenIdsOfContract = getERC721TokenListOfContract(contractAddresses[i]);
+                for (uint j = 0; j < tokenIdsOfContract.length; j++) {
+                    IERC721(contractAddresses[i]).transferFrom(address(this), toAddresses[i], tokenIdsOfContract[j]);
+                }
+            } else if (tokenTypes[i] == 2) {
+                for (uint j = 0; j < tokenIds[i].length; j++) {
+                    IERC1155(contractAddresses[i]).safeTransferFrom(address(this), toAddresses[i], tokenIds[i][j], IERC1155(contractAddresses[i]).balanceOf(address(this), tokenIds[i][j]), "");
+                }
+            }
+        }
     }
 
     /*

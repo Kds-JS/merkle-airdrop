@@ -3,7 +3,7 @@ pragma solidity ^0.8.17;
 
 import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
 
-contract NFTest is ERC1155 {
+contract sNFTest is ERC1155 {
 
     uint256 public constant NFT_1 = 0;
     uint256 public constant NFT_2 = 1;
