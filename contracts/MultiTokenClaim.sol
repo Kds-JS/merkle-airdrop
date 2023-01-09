@@ -1,18 +1,23 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.17;
 
+import "@openzeppelin/contracts/token/ERC1155/utils/ERC1155Holder.sol";
 import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract MultiTokenClaim is Ownable, Pausable {
+contract MultiTokenClaim is Ownable, Pausable, ERC1155Holder {
 
     bytes32 public merkleRootERC20; // @notice Merkle root ERC20 tokens
     bytes32 public merkleRootERC721; // @notice Merkle root ERC721 tokens
+    bytes32 public merkleRootERC1155; // @notice Merkle root ERC1155 tokens
 
-    mapping(address => mapping(address => uint256)) public amountClaimedByContractAddress; // @notice Mapping of address to amount claimed
+    mapping(address => mapping(address => uint256)) public amountClaimedByContractAddress; // @notice Mapping of contract address to user address to claimed amount
+    mapping(address => mapping(address => mapping(uint => uint))) public ERC1155ClaimedByContractAddress; // @notice Mapping of contract address to user address to ERC1155 token ID to claimed amount
 
-    event Claimed(address indexed contractAddress, address indexed account, uint256 amount);
+    event ERC20Claimed(address indexed contractAddress, address indexed account, uint256 amount);
+    event ERC721Claimed(address indexed contractAddress, address indexed account, uint256 tokenId);
+    event ERC1155Claimed(address indexed contractAddress, address indexed account, uint256 tokenId, uint256 amount);
 
     // @notice Constructor for the MultiTokenClaim contract
     constructor() {}
@@ -36,7 +41,7 @@ contract MultiTokenClaim is Ownable, Pausable {
 
         IERC20(contractAddress).transfer(msg.sender, claimableAmount);
 
-        emit Claimed(contractAddress, msg.sender, claimableAmount);
+        emit ERC20Claimed(contractAddress, msg.sender, claimableAmount);
     }
 
     /*
@@ -63,12 +68,35 @@ contract MultiTokenClaim is Ownable, Pausable {
             IERC721(contractAddress).transferFrom(address(this), msg.sender, randomIdToMint);
         }
 
-        emit Claimed(contractAddress, msg.sender, claimableAmount);
+        emit ERC721Claimed(contractAddress, msg.sender, claimableAmount);
+    }
+
+    /*
+    * @notice Claim "msg.sender" ERC1155 tokens with specified contract, amount and merkle proof
+    * @param address contractAddress : address of ERC721 contract (this contract must have token balance)
+    * @param uint256 tokenId: token ID
+    * @param uint256 amount : amount of tokens
+    * @param bytes32[] calldata merkleProof : merkle proof
+    */
+    function claimERC1155(address contractAddress, uint256 tokenId, uint256 amount, bytes32[] calldata merkleProof) external whenNotPaused {
+        require(IERC1155(contractAddress).balanceOf(address(this), tokenId) >= amount, "Contract doesn't have enough tokens");
+
+        bytes32 node = keccak256(abi.encodePacked(contractAddress, msg.sender, tokenId, amount));
+        bool isValidProof = MerkleProof.verifyCalldata(merkleProof, merkleRootERC1155, node);
+        require(isValidProof, 'Invalid proof.');
+
+        require(ERC1155ClaimedByContractAddress[contractAddress][msg.sender][tokenId] != amount, 'Nothing to claim.');
+        uint256 claimableAmount = amount - ERC1155ClaimedByContractAddress[contractAddress][msg.sender][tokenId];
+        ERC1155ClaimedByContractAddress[contractAddress][msg.sender][tokenId] += amount;
+
+        IERC1155(contractAddress).safeTransferFrom(address(this), msg.sender, tokenId, claimableAmount, "");
+
+        emit ERC1155Claimed(contractAddress, msg.sender, tokenId, claimableAmount);
     }
 
     /*
     * @notice Updates the merkle root ERC20
-    * @param bytes32 merkleRootERC20_ : merkle root
+    * @param bytes32 _merkleRootERC20 : merkle root
     */
     function updateMerkleRootERC20(bytes32 _merkleRootERC20) external onlyOwner {
         merkleRootERC20 = _merkleRootERC20;
@@ -76,10 +104,18 @@ contract MultiTokenClaim is Ownable, Pausable {
 
     /*
     * @notice Updates the merkle root ERC721
-    * @param bytes32 merkleRootERC721_ : merkle root
+    * @param bytes32 _merkleRootERC721 : merkle root
     */
     function updateMerkleRootERC721(bytes32 _merkleRootERC721) external onlyOwner {
         merkleRootERC721 = _merkleRootERC721;
+    }
+
+    /*
+    * @notice Updates the merkle root ERC1155
+    * @param bytes32 _merkleRootERC1155 : merkle root
+    */
+    function updateMerkleRootERC1155(bytes32 _merkleRootERC1155) external onlyOwner {
+        merkleRootERC1155 = _merkleRootERC1155;
     }
 
 
@@ -141,4 +177,10 @@ interface IERC721 {
 interface IERC20 {
     function transfer(address recipient, uint256 amount) external returns (bool);
     function balanceOf(address _owner) external view returns (uint256);
+}
+
+// @notice "ERC1155" interface is used to interact with the token contract
+interface IERC1155 {
+    function safeTransferFrom(address _from, address _to, uint256 _id, uint256 _value, bytes calldata _data) external;
+    function balanceOf(address _owner, uint256 _id) external view returns (uint256);
 }
