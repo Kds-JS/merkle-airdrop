@@ -2,11 +2,12 @@
 pragma solidity ^0.8.17;
 
 import "@openzeppelin/contracts/token/ERC1155/utils/ERC1155Holder.sol";
+import "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
 import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract MultiTokenClaim is Ownable, Pausable, ERC1155Holder {
+contract MultiTokenClaim is Ownable, Pausable, ERC1155Holder, ERC721Holder {
 
     bytes32 public merkleRootERC20; // @notice Merkle root ERC20 tokens
     bytes32 public merkleRootERC721; // @notice Merkle root ERC721 tokens
@@ -15,12 +16,17 @@ contract MultiTokenClaim is Ownable, Pausable, ERC1155Holder {
     mapping(address => mapping(address => uint256)) public amountClaimedByContractAddress; // @notice Mapping of contract address to user address to claimed amount
     mapping(address => mapping(address => mapping(uint => uint))) public ERC1155ClaimedByContractAddress; // @notice Mapping of contract address to user address to ERC1155 token ID to claimed amount
 
+    // @notice ERC20 events, claimed and merkle root updated
     event ERC20Claimed(address indexed contractAddress, address indexed account, uint256 amount);
-    event ERC721Claimed(address indexed contractAddress, address indexed account, uint256 tokenId);
-    event ERC1155Claimed(address indexed contractAddress, address indexed account, uint256 tokenId, uint256 amount);
+    event ERC20MerkleRootUpdated(bytes32 merkleRootERC20);
 
-    // @notice Constructor for the MultiTokenClaim contract
-    constructor() {}
+    // @notice ERC721 events, claimed and merkle root updated
+    event ERC721Claimed(address indexed contractAddress, address indexed account, uint256 tokenId);
+    event ERC721MerkleRootUpdated(bytes32 merkleRootERC721);
+
+    // @notice ERC1155 events, claimed and merkle root updated
+    event ERC1155MerkleRootUpdated(bytes32 merkleRootERC1155);
+    event ERC1155Claimed(address indexed contractAddress, address indexed account, uint256 tokenId, uint256 amount);
 
     /*
     * @notice Claim "msg.sender" ERC20 tokens with specified contract, amount and merkle proof
@@ -161,6 +167,7 @@ contract MultiTokenClaim is Ownable, Pausable, ERC1155Holder {
     */
     function updateMerkleRootERC20(bytes32 _merkleRootERC20) external onlyOwner {
         merkleRootERC20 = _merkleRootERC20;
+        emit ERC20MerkleRootUpdated(_merkleRootERC20);
     }
 
     /*
@@ -169,6 +176,7 @@ contract MultiTokenClaim is Ownable, Pausable, ERC1155Holder {
     */
     function updateMerkleRootERC721(bytes32 _merkleRootERC721) external onlyOwner {
         merkleRootERC721 = _merkleRootERC721;
+        emit ERC721MerkleRootUpdated(_merkleRootERC721);
     }
 
     /*
@@ -177,8 +185,8 @@ contract MultiTokenClaim is Ownable, Pausable, ERC1155Holder {
     */
     function updateMerkleRootERC1155(bytes32 _merkleRootERC1155) external onlyOwner {
         merkleRootERC1155 = _merkleRootERC1155;
+        emit ERC1155MerkleRootUpdated(_merkleRootERC1155);
     }
-
 
     /*
     * @notice Returns the list of NFT IDs of this contract.
