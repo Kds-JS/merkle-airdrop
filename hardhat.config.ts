@@ -12,7 +12,7 @@ const config: HardhatUserConfig = {
     polygonMumbai: {
       url: process.env.MUMBAI_URL!,
       accounts: [process.env.WALLET_PRIVATE_KEY!],
-    }
+    },
   },
   etherscan: {
     apiKey: {

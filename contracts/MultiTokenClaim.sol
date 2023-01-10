@@ -7,8 +7,6 @@ import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-import "hardhat/console.sol";
-
 contract MultiTokenClaim is Ownable, Pausable, ERC1155Holder, ERC721Holder {
 
     bytes32 public merkleRootERC20; // @notice Merkle root ERC20 tokens
