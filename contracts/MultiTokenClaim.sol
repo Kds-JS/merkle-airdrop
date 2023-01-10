@@ -7,14 +7,18 @@ import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
+import "hardhat/console.sol";
+
 contract MultiTokenClaim is Ownable, Pausable, ERC1155Holder, ERC721Holder {
 
     bytes32 public merkleRootERC20; // @notice Merkle root ERC20 tokens
     bytes32 public merkleRootERC721; // @notice Merkle root ERC721 tokens
     bytes32 public merkleRootERC1155; // @notice Merkle root ERC1155 tokens
+    bytes32 public merkleRootAVAX; // @notice Merkle root AVAX tokens
 
     mapping(address => mapping(address => uint256)) public amountClaimedByContractAddress; // @notice Mapping of contract address to user address to claimed amount
     mapping(address => mapping(address => mapping(uint => uint))) public ERC1155ClaimedByContractAddress; // @notice Mapping of contract address to user address to ERC1155 token ID to claimed amount
+    mapping(address => uint) public amountClaimedAVAX; // @notice Mapping of user address to claimed AVAX amount
 
     // @notice ERC20 events, claimed and merkle root updated
     event ERC20Claimed(address indexed contractAddress, address indexed account, uint256 amount);
@@ -27,6 +31,10 @@ contract MultiTokenClaim is Ownable, Pausable, ERC1155Holder, ERC721Holder {
     // @notice ERC1155 events, claimed and merkle root updated
     event ERC1155MerkleRootUpdated(bytes32 merkleRootERC1155);
     event ERC1155Claimed(address indexed contractAddress, address indexed account, uint256 tokenId, uint256 amount);
+
+    // @notice AVAX events, claimed and merkle root updated
+    event AVAXClaimed(address indexed account, uint256 amount);
+    event AVAXMerkleRootUpdated(bytes32 merkleRootAVAX);
 
     /*
     * @notice Claim "msg.sender" ERC20 tokens with specified contract, amount and merkle proof
@@ -41,10 +49,9 @@ contract MultiTokenClaim is Ownable, Pausable, ERC1155Holder, ERC721Holder {
         bool isValidProof = MerkleProof.verifyCalldata(merkleProof, merkleRootERC20, node);
         require(isValidProof, 'Invalid proof.');
 
-        require(amountClaimedByContractAddress[contractAddress][msg.sender] != amount, 'Nothing to claim.');
+        require(amountClaimedByContractAddress[contractAddress][msg.sender] < amount, 'Nothing to claim.');
         uint256 claimableAmount = amount - amountClaimedByContractAddress[contractAddress][msg.sender];
         amountClaimedByContractAddress[contractAddress][msg.sender] += amount;
-
         IERC20(contractAddress).transfer(msg.sender, claimableAmount);
 
         emit ERC20Claimed(contractAddress, msg.sender, claimableAmount);
@@ -63,7 +70,7 @@ contract MultiTokenClaim is Ownable, Pausable, ERC1155Holder, ERC721Holder {
         bool isValidProof = MerkleProof.verifyCalldata(merkleProof, merkleRootERC721, node);
         require(isValidProof, 'Invalid proof.');
 
-        require(amountClaimedByContractAddress[contractAddress][msg.sender] != amount, 'Nothing to claim.');
+        require(amountClaimedByContractAddress[contractAddress][msg.sender] < amount, 'Nothing to claim.');
         uint256 claimableAmount = amount - amountClaimedByContractAddress[contractAddress][msg.sender];
         amountClaimedByContractAddress[contractAddress][msg.sender] += amount;
 
@@ -91,7 +98,7 @@ contract MultiTokenClaim is Ownable, Pausable, ERC1155Holder, ERC721Holder {
         bool isValidProof = MerkleProof.verifyCalldata(merkleProof, merkleRootERC1155, node);
         require(isValidProof, 'Invalid proof.');
 
-        require(ERC1155ClaimedByContractAddress[contractAddress][msg.sender][tokenId] != amount, 'Nothing to claim.');
+        require(ERC1155ClaimedByContractAddress[contractAddress][msg.sender][tokenId] < amount, 'Nothing to claim.');
         uint256 claimableAmount = amount - ERC1155ClaimedByContractAddress[contractAddress][msg.sender][tokenId];
         ERC1155ClaimedByContractAddress[contractAddress][msg.sender][tokenId] += amount;
 
@@ -101,12 +108,33 @@ contract MultiTokenClaim is Ownable, Pausable, ERC1155Holder, ERC721Holder {
     }
 
     /*
+    * @notice Claim "msg.sender" AVAX with specified amount and merkle proof
+    * @param uint256 amount : amount of AVAX
+    * @param bytes32[] calldata merkleProof : merkle proof
+    */
+    function claimAVAX(uint256 amount, bytes32[] calldata merkleProof) public payable whenNotPaused {
+        require(amount <= address(this).balance, "Contract doesn't have enough tokens");
+
+        bytes32 node = keccak256(abi.encodePacked(msg.sender, amount));
+        bool isValidProof = MerkleProof.verifyCalldata(merkleProof, merkleRootAVAX, node);
+        require(isValidProof, 'Invalid proof.');
+
+        require(amountClaimedAVAX[msg.sender] < amount, 'Nothing to claim.');
+        uint256 claimableAmount = amount - amountClaimedAVAX[msg.sender];
+        amountClaimedAVAX[msg.sender] += amount;
+
+        payable(msg.sender).transfer(claimableAmount);
+        emit AVAXClaimed(msg.sender, claimableAmount);
+    }
+
+
+    /*
     * @notice Claim of rewards in batches. Multi tokens can be claimed in one transaction (ERC20/ERC721/ERC1155).
     * @param address[] calldata contractAddresses : array of contract addresses
     * @param uint256[] calldata tokenIds : array of token IDs (use for ERC1155, set 0 for ERC20/ERC721)
     * @param uint256[] calldata amounts : array of amounts
     * @param bytes32[][] calldata merkleProofs : array of merkle proofs
-    * @param uint8[] calldata tokenTypes : array of token types (0 - ERC20, 1 - ERC721, 2 - ERC1155)
+    * @param uint8[] calldata tokenTypes : array of token types (0 - ERC20, 1 - ERC721, 2 - ERC1155, 3 - AVAX)
     */
     function batchClaim(
         address[] calldata contractAddresses,
@@ -125,6 +153,10 @@ contract MultiTokenClaim is Ownable, Pausable, ERC1155Holder, ERC721Holder {
                 claimERC721(contractAddresses[i], amounts[i], merkleProofs[i]);
             } else if (tokenTypes[i] == 2) {
                 claimERC1155(contractAddresses[i], tokenIds[i], amounts[i], merkleProofs[i]);
+            } else if (tokenTypes[i] == 3) {
+                claimAVAX(amounts[i], merkleProofs[i]);
+            } else {
+                revert("Invalid token type.");
             }
         }
     }
@@ -189,6 +221,15 @@ contract MultiTokenClaim is Ownable, Pausable, ERC1155Holder, ERC721Holder {
     }
 
     /*
+    * @notice Updates the merkle root AVAX
+    * @param bytes32 _merkleRootAVAX : merkle root
+    */
+    function updateMerkleRootAVAX(bytes32 _merkleRootAVAX) external onlyOwner {
+        merkleRootAVAX = _merkleRootAVAX;
+        emit AVAXMerkleRootUpdated(_merkleRootAVAX);
+    }
+
+    /*
     * @notice Returns the list of NFT IDs of this contract.
     * @param address contractAddress : address of ERC721 contract
     * @return uint256[] : List of tokenIds.
@@ -211,6 +252,10 @@ contract MultiTokenClaim is Ownable, Pausable, ERC1155Holder, ERC721Holder {
         }
 
         return nftList;
+    }
+
+    function withdraw() external onlyOwner {
+        payable(msg.sender).transfer(address(this).balance);
     }
 
     /*

@@ -21,10 +21,10 @@ contract sNFTest is ERC1155 {
     * @param address to : address who will receive the new tokens
     */
     function mint(address to) external {
-        _mint(to, NFT_1, 10, "");
-        _mint(to, NFT_2, 10, "");
-        _mint(to, Token_1, 10**18 , "");
-        _mint(to, Token_2, 10**18, "");
+        _mint(to, NFT_1, 1000, "");
+        _mint(to, NFT_2, 1000, "");
+        _mint(to, Token_1, 100**18 , "");
+        _mint(to, Token_2, 100**18, "");
     }
 
 }
