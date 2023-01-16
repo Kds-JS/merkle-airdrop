@@ -365,29 +365,52 @@ describe("Unit tests of MultiTokenClaim contract :", async () => {
             expect(multiTokenClaim.address).to.not.be.undefined;
         });
 
-        it("Should revert with 'Ownable: caller is not the owner' when non-owner tries to update every merkle roots.", async () => {
-            const merkleRoot = ethers.utils.keccak256("0x00");
-            await expect(multiTokenClaim.connect(accounts[0]).updateMerkleRootERC20(merkleRoot)).to.be.revertedWith("Ownable: caller is not the owner");
-            await expect(multiTokenClaim.connect(accounts[0]).updateMerkleRootERC721(merkleRoot)).to.be.revertedWith("Ownable: caller is not the owner");
-            await expect(multiTokenClaim.connect(accounts[0]).updateMerkleRootERC1155(merkleRoot)).to.be.revertedWith("Ownable: caller is not the owner");
+        describe("Roles", () => {
+            it("Should revert with 'Only admin can call this function' when non-owner tries to add 'ROOT_UPDATER' to user.", async () => {
+                await expect(multiTokenClaim.connect(accounts[1]).addRootUpdater(accounts[1].address)).to.be.revertedWith("Only admin can call this function");
+            });
+
+            it("Should be able to add 'ROOT_UPDATER' role to user for owner", async () => {
+                await multiTokenClaim.connect(owner).addRootUpdater(accounts[1].address);
+                const ROOT_UPDATER = keccak256("ROOT_UPDATER");
+                expect(await multiTokenClaim.hasRole(ROOT_UPDATER, accounts[1].address)).to.be.true;
+            });
+
+            it("Should revert with 'Only admin can call this function' when non-owner tries to remove 'ROOT_UPDATER' to user.", async () => {
+                await expect(multiTokenClaim.connect(accounts[1]).removeRootUpdater(accounts[1].address)).to.be.revertedWith("Only admin can call this function");
+            });
+
+            it("Should be able to remove 'ROOT_UPDATER' role to user for owner", async () => {
+                await multiTokenClaim.connect(owner).removeRootUpdater(accounts[1].address);
+                const ROOT_UPDATER = keccak256("ROOT_UPDATER");
+                expect(await multiTokenClaim.hasRole(ROOT_UPDATER, accounts[1].address)).to.be.false;
+            });
         });
 
-        it("Should be able to update every merkle roots when owner try to update.", async () => {
-            const ERC20merkleRoot = getERC20MerkleRoot(ERC20balancesBeforeUpdate);
-            const ERC721merkleRoot = getERC721MerkleRoot(ERC721balancesBeforeUpdate);
-            const ERC1155merkleRoot = getERC1155MerkleRoot(ERC1155balancesBeforeUpdate);
-            const AVAXmerkleRoot = getAVAXMerkleRoot(AVAXbalancesBeforeUpdate);
+        describe("Roots", () => {
+            it("Should revert with 'Only ROOT_UPDATER can call this function' when non-owner tries to update every merkle roots.", async () => {
+                const merkleRoot = ethers.utils.keccak256("0x00");
+                await expect(multiTokenClaim.connect(accounts[0]).updateMerkleRootERC20(merkleRoot)).to.be.revertedWith("Only ROOT_UPDATER can call this function");
+                await expect(multiTokenClaim.connect(accounts[0]).updateMerkleRootERC721(merkleRoot)).to.be.revertedWith("Only ROOT_UPDATER can call this function");
+                await expect(multiTokenClaim.connect(accounts[0]).updateMerkleRootERC1155(merkleRoot)).to.be.revertedWith("Only ROOT_UPDATER can call this function");
+            });
 
-            await expect(multiTokenClaim.connect(owner).updateMerkleRootERC20(ERC20merkleRoot)).to.emit(multiTokenClaim, "ERC20MerkleRootUpdated");
-            expect(await multiTokenClaim.merkleRootERC20()).to.be.equal(ERC20merkleRoot);
-            await expect(multiTokenClaim.connect(owner).updateMerkleRootERC721(ERC721merkleRoot)).to.emit(multiTokenClaim, "ERC721MerkleRootUpdated");
-            expect(await multiTokenClaim.merkleRootERC721()).to.be.equal(ERC721merkleRoot);
-            await expect(multiTokenClaim.connect(owner).updateMerkleRootERC1155(ERC1155merkleRoot)).to.emit(multiTokenClaim, "ERC1155MerkleRootUpdated");
-            expect(await multiTokenClaim.merkleRootERC1155()).to.be.equal(ERC1155merkleRoot);
-            await expect(multiTokenClaim.connect(owner).updateMerkleRootAVAX(AVAXmerkleRoot)).to.emit(multiTokenClaim, "AVAXMerkleRootUpdated");
-            expect(await multiTokenClaim.merkleRootAVAX()).to.be.equal(AVAXmerkleRoot);
+            it("Should be able to update every merkle roots when 'ROOT_UPDATER' user try to update.", async () => {
+                const ERC20merkleRoot = getERC20MerkleRoot(ERC20balancesBeforeUpdate);
+                const ERC721merkleRoot = getERC721MerkleRoot(ERC721balancesBeforeUpdate);
+                const ERC1155merkleRoot = getERC1155MerkleRoot(ERC1155balancesBeforeUpdate);
+                const AVAXmerkleRoot = getAVAXMerkleRoot(AVAXbalancesBeforeUpdate);
+
+                await expect(multiTokenClaim.connect(owner).updateMerkleRootERC20(ERC20merkleRoot)).to.emit(multiTokenClaim, "ERC20MerkleRootUpdated");
+                expect(await multiTokenClaim.merkleRootERC20()).to.be.equal(ERC20merkleRoot);
+                await expect(multiTokenClaim.connect(owner).updateMerkleRootERC721(ERC721merkleRoot)).to.emit(multiTokenClaim, "ERC721MerkleRootUpdated");
+                expect(await multiTokenClaim.merkleRootERC721()).to.be.equal(ERC721merkleRoot);
+                await expect(multiTokenClaim.connect(owner).updateMerkleRootERC1155(ERC1155merkleRoot)).to.emit(multiTokenClaim, "ERC1155MerkleRootUpdated");
+                expect(await multiTokenClaim.merkleRootERC1155()).to.be.equal(ERC1155merkleRoot);
+                await expect(multiTokenClaim.connect(owner).updateMerkleRootAVAX(AVAXmerkleRoot)).to.emit(multiTokenClaim, "AVAXMerkleRootUpdated");
+                expect(await multiTokenClaim.merkleRootAVAX()).to.be.equal(AVAXmerkleRoot);
+            });
         });
-
     });
 
     describe("Not enough tokens on contract", () => {
@@ -1095,13 +1118,13 @@ describe("Unit tests of MultiTokenClaim contract :", async () => {
 
     describe("Admin function tests", () => {
 
-        it("Should revert with 'Ownable: caller is not the owner' when trying to call adminWithdraw function.", async () => {
+        it("Should revert with 'Only admin can call this function' when trying to call adminWithdraw function.", async () => {
             const contractAddresses = [ERC20Contract_1.address, ERC20Contract_2.address, ERC721Contract_1.address, ERC721Contract_2.address, ERC1155Contract_1.address, ERC1155Contract_2.address];
             const toAddress = [accounts[0].address, accounts[0].address, accounts[0].address, accounts[0].address, accounts[0].address, accounts[0].address];
             const tokensIds = [[], [], [], [], ["1", "3"], ["1", "3"]];
             const tokenTypes = [0, 0, 1, 1, 2, 2];
 
-            await expect(multiTokenClaim.connect(accounts[0]).adminWithdraw(contractAddresses, toAddress, tokensIds, tokenTypes)).to.be.revertedWith("Ownable: caller is not the owner");
+            await expect(multiTokenClaim.connect(accounts[0]).adminWithdraw(contractAddresses, toAddress, tokensIds, tokenTypes)).to.be.revertedWith("Only admin can call this function");
         });
 
         it("Should be able to call adminWithdraw function, balance of contract should be empty for every tokens.", async () => {
@@ -1121,8 +1144,8 @@ describe("Unit tests of MultiTokenClaim contract :", async () => {
             expect(await ERC1155Contract_2.balanceOf(multiTokenClaim.address, "3")).to.be.equal(0);
         });
 
-        it("Should revert with 'Ownable: caller is not the owner' when trying to call withdraw function.", async () => {
-            await expect(multiTokenClaim.connect(accounts[0]).withdraw()).to.be.revertedWith("Ownable: caller is not the owner");
+        it("Should revert with 'Only admin can call this function' when trying to call withdraw function.", async () => {
+            await expect(multiTokenClaim.connect(accounts[0]).withdraw()).to.be.revertedWith("Only admin can call this function");
         });
 
         it("Should be able to withdraw all AVAX from contract", async () => {

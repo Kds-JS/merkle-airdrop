@@ -4,10 +4,12 @@ pragma solidity ^0.8.17;
 import "@openzeppelin/contracts/token/ERC1155/utils/ERC1155Holder.sol";
 import "@openzeppelin/contracts/token/ERC721/utils/ERC721Holder.sol";
 import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
+import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract MultiTokenClaim is Ownable, Pausable, ERC1155Holder, ERC721Holder {
+contract MultiTokenClaim is Pausable, ERC1155Holder, ERC721Holder, AccessControl {
+
+    bytes32 public constant ROOT_UPDATER = keccak256("ROOT_UPDATER"); // @notice "ROOT_UPDATER" role is used to update the merkle roots
 
     bytes32 public merkleRootERC20; // @notice Merkle root ERC20 tokens
     bytes32 public merkleRootERC721; // @notice Merkle root ERC721 tokens
@@ -33,6 +35,27 @@ contract MultiTokenClaim is Ownable, Pausable, ERC1155Holder, ERC721Holder {
     // @notice AVAX events, claimed and merkle root updated
     event AVAXClaimed(address indexed account, uint256 amount);
     event AVAXMerkleRootUpdated(bytes32 merkleRootAVAX);
+
+    constructor() {
+        _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
+        _setupRole(ROOT_UPDATER, msg.sender);
+    }
+
+    /*
+    * @notice modifier to check if the user has the DEFAULT_ADMIN role
+    */
+    modifier onlyAdmin() {
+        require(hasRole(DEFAULT_ADMIN_ROLE, msg.sender), "Only admin can call this function");
+        _;
+    }
+
+    /*
+    * @notice modifier to check if the user has the ROOT_UPDATER role
+    */
+    modifier onlyRootUpdater() {
+        require(hasRole(ROOT_UPDATER, msg.sender), "Only ROOT_UPDATER can call this function");
+        _;
+    }
 
     /*
     * @notice Claim "msg.sender" ERC20 tokens with specified contract, amount and merkle proof
@@ -127,9 +150,9 @@ contract MultiTokenClaim is Ownable, Pausable, ERC1155Holder, ERC721Holder {
 
 
     /*
-    * @notice Claim of rewards in batches. Multi tokens can be claimed in one transaction (ERC20/ERC721/ERC1155).
+    * @notice Claim of rewards in batches. Multi tokens can be claimed in one transaction (ERC20/ERC721/ERC1155/AVAX).
     * @param address[] calldata contractAddresses : array of contract addresses
-    * @param uint256[] calldata tokenIds : array of token IDs (use for ERC1155, set 0 for ERC20/ERC721)
+    * @param uint256[] calldata tokenIds : array of token IDs (use for ERC1155, set 0 for ERC20/ERC721/AVAX)
     * @param uint256[] calldata amounts : array of amounts
     * @param bytes32[][] calldata merkleProofs : array of merkle proofs
     * @param uint8[] calldata tokenTypes : array of token types (0 - ERC20, 1 - ERC721, 2 - ERC1155, 3 - AVAX)
@@ -171,7 +194,7 @@ contract MultiTokenClaim is Ownable, Pausable, ERC1155Holder, ERC721Holder {
         address[] calldata toAddresses,
         uint256[][] calldata tokenIds,
         uint8[] calldata tokenTypes
-    ) external onlyOwner {
+    ) external onlyAdmin {
         if (contractAddresses.length != tokenIds.length || contractAddresses.length != tokenTypes.length || contractAddresses.length != toAddresses.length) {
             revert("Invalid input data");
         }
@@ -195,7 +218,7 @@ contract MultiTokenClaim is Ownable, Pausable, ERC1155Holder, ERC721Holder {
     * @notice Updates the merkle root ERC20
     * @param bytes32 _merkleRootERC20 : merkle root
     */
-    function updateMerkleRootERC20(bytes32 _merkleRootERC20) external onlyOwner {
+    function updateMerkleRootERC20(bytes32 _merkleRootERC20) external onlyRootUpdater {
         merkleRootERC20 = _merkleRootERC20;
         emit ERC20MerkleRootUpdated(_merkleRootERC20);
     }
@@ -204,7 +227,7 @@ contract MultiTokenClaim is Ownable, Pausable, ERC1155Holder, ERC721Holder {
     * @notice Updates the merkle root ERC721
     * @param bytes32 _merkleRootERC721 : merkle root
     */
-    function updateMerkleRootERC721(bytes32 _merkleRootERC721) external onlyOwner {
+    function updateMerkleRootERC721(bytes32 _merkleRootERC721) external onlyRootUpdater {
         merkleRootERC721 = _merkleRootERC721;
         emit ERC721MerkleRootUpdated(_merkleRootERC721);
     }
@@ -213,7 +236,7 @@ contract MultiTokenClaim is Ownable, Pausable, ERC1155Holder, ERC721Holder {
     * @notice Updates the merkle root ERC1155
     * @param bytes32 _merkleRootERC1155 : merkle root
     */
-    function updateMerkleRootERC1155(bytes32 _merkleRootERC1155) external onlyOwner {
+    function updateMerkleRootERC1155(bytes32 _merkleRootERC1155) external onlyRootUpdater {
         merkleRootERC1155 = _merkleRootERC1155;
         emit ERC1155MerkleRootUpdated(_merkleRootERC1155);
     }
@@ -222,9 +245,25 @@ contract MultiTokenClaim is Ownable, Pausable, ERC1155Holder, ERC721Holder {
     * @notice Updates the merkle root AVAX
     * @param bytes32 _merkleRootAVAX : merkle root
     */
-    function updateMerkleRootAVAX(bytes32 _merkleRootAVAX) external onlyOwner {
+    function updateMerkleRootAVAX(bytes32 _merkleRootAVAX) external onlyRootUpdater {
         merkleRootAVAX = _merkleRootAVAX;
         emit AVAXMerkleRootUpdated(_merkleRootAVAX);
+    }
+
+    /*
+    * @notice Add 'ROOT_UPDATER' role to address
+    * @param address _address : address
+    */
+    function addRootUpdater(address _address) external onlyAdmin {
+        _setupRole(ROOT_UPDATER, _address);
+    }
+
+    /*
+    * @notice Remove 'ROOT_UPDATER' role from address
+    * @param address _address : address
+    */
+    function removeRootUpdater(address _address) external onlyAdmin {
+        revokeRole(ROOT_UPDATER, _address);
     }
 
     /*
@@ -252,7 +291,7 @@ contract MultiTokenClaim is Ownable, Pausable, ERC1155Holder, ERC721Holder {
         return nftList;
     }
 
-    function withdraw() external onlyOwner {
+    function withdraw() external onlyAdmin {
         payable(msg.sender).transfer(address(this).balance);
     }
 
@@ -268,12 +307,16 @@ contract MultiTokenClaim is Ownable, Pausable, ERC1155Holder, ERC721Holder {
     /*               Pauser               */
     /* ********************************** */
 
-    function pause() public onlyOwner {
+    function pause() public onlyAdmin {
         _pause();
     }
 
-    function unpause() public onlyOwner {
+    function unpause() public onlyAdmin {
         _unpause();
+    }
+
+    function supportsInterface(bytes4 interfaceId) public view virtual override(ERC1155Receiver, AccessControl) returns (bool) {
+        return super.supportsInterface(interfaceId);
     }
 }
 

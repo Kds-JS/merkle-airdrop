@@ -9,14 +9,20 @@ dotenv.config();
 const config: HardhatUserConfig = {
   solidity: "0.8.17",
   networks: {
-    polygonMumbai: {
-      url: process.env.MUMBAI_URL!,
-      accounts: [process.env.WALLET_PRIVATE_KEY!],
+    fuji: {
+      url: 'https://api.avax-test.network/ext/bc/C/rpc',
+      chainId: 43113,
+      accounts: [process.env.WALLET_PRIVATE_KEY!]
     },
+    avax_mainnet: {
+      url: 'https://api.avax.network/ext/bc/C/rpc',
+      chainId: 43114,
+      accounts: [process.env.WALLET_PRIVATE_KEY!]
+    }
   },
   etherscan: {
     apiKey: {
-      polygonMumbai: process.env.MUMBAI_PRIVATE_KEY!,
+      avalancheFujiTestnet: process.env.FUJI_PRIVATE_KEY!,
     },
   },paths: {
     artifacts: "./artifacts"
