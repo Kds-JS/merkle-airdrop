@@ -36,6 +36,9 @@ contract MultiTokenClaim is Pausable, ERC1155Holder, ERC721Holder, AccessControl
     event AVAXClaimed(address indexed account, uint256 amount);
     event AVAXMerkleRootUpdated(bytes32 merkleRootAVAX);
 
+    // @notice Batch claim event
+    event BatchClaimed(address indexed account);
+
     constructor() {
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _setupRole(ROOT_UPDATER, msg.sender);
@@ -180,6 +183,8 @@ contract MultiTokenClaim is Pausable, ERC1155Holder, ERC721Holder, AccessControl
                 revert("Invalid token type.");
             }
         }
+
+        emit BatchClaimed(msg.sender);
     }
 
     /*
