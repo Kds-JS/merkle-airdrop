@@ -841,7 +841,7 @@ describe("Unit tests of MultiTokenClaim contract :", async () => {
             }
         });
 
-        it("Should be able to claim tokens (5 lasts accounts) with batchClaim.", async () => {
+        it("Should be able to claim tokens (5 lasts accounts) with batchClaim and to emit 'BatchClaimed' event.", async () => {
             for (let i = 5; i < 10; i++) {
                 let [merkleProofERC20, lineERC20] = getERC20MerkleProof(ERC20balancesBeforeUpdate, ERC20Contract_1.address, accounts[i].address);
                 let [merkleProofERC721, lineERC721] = getERC721MerkleProof(ERC721balancesBeforeUpdate, ERC721Contract_1.address, accounts[i].address);
@@ -870,7 +870,7 @@ describe("Unit tests of MultiTokenClaim contract :", async () => {
 
                 const balanceOfUserBeforeClaim = await ethers.provider.getBalance(accounts[i].address);
 
-                await expect(multiTokenClaim.connect(accounts[i]).batchClaim(batchContractAddresses, batchTokenIds, batchAmounts, batchMerkleProofs, batchTokenTypes)).to.not.be.reverted;
+                await expect(multiTokenClaim.connect(accounts[i]).batchClaim(batchContractAddresses, batchTokenIds, batchAmounts, batchMerkleProofs, batchTokenTypes)).to.emit(multiTokenClaim, "BatchClaimed").withArgs(accounts[i].address);
 
                 const balanceOfUserAfterClaim = await ethers.provider.getBalance(accounts[i].address);
 

@@ -55,8 +55,8 @@ ERC721_List.map((a: any) => {
 ERC1155_List.map((a: any) => {
     balancesERC1155.push({
         contractAddress: a.contractAddress,
-        address: a.address,
-        tokenId: ethers.utils.defaultAbiCoder.encode(['uint256'], [a.tokenId]),
+        address: a.userId,
+        tokenId: ethers.utils.defaultAbiCoder.encode(['uint256'], [a.erc1155TokenId]),
         amount: ethers.utils.defaultAbiCoder.encode(['uint256'], [a.amount]),
     });
 });
