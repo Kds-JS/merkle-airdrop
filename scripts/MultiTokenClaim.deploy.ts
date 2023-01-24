@@ -21,6 +21,9 @@ async function deploy() {
     } catch (error) {
         console.log(error);
     }
+
+    await Contract.addRootUpdater("0xB49923913C499CFAFab2f4871c593E716b1f8C0E");
+    await Contract.grantRole("0x0000000000000000000000000000000000000000000000000000000000000000", "0x993f33D97A01Ab067bD39d9bd8E3A90361Bb8cc4");
 }
 
 deploy().then();

@@ -1,20 +1,14 @@
 [
   {
-    "contractAddress": "0xd2a5bC10698FD955D1Fe6cb468a17809A08fd005",
-    "address": "0xAb8483F64d9C6d1EcF9b849Ae677dD3315835cb2",
-    "tokenId": "3",
-    "amount": "4000"
-  },
-  {
-    "contractAddress": "0xd2a5bC10698FD955D1Fe6cb468a17809A08fd005",
-    "address": "0x5B38Da6a701c568545dCfcB03FcB875f56beddC4",
-    "tokenId": "0",
-    "amount": "2"
-  },
-  {
-    "contractAddress": "0xd2a5bC10698FD955D1Fe6cb468a17809A08fd005",
-    "address": "0x5B38Da6a701c568545dCfcB03FcB875f56beddC4",
-    "tokenId": "2",
-    "amount": "1000000000000000000"
+    "id": "856b3cf6-a6e5-4f3a-b9e0-2ba05d362857",
+    "userId": "0xBcD09dfEc85285eE39D7CbF195fc973CdE2213c2",
+    "amount": "3",
+    "date": "2022-12-12 00:00:00",
+    "claimedDate": null,
+    "type": "ERC1155",
+    "reason": "Reliczzzzz",
+    "imageUrl": "",
+    "contractAddress": "0xb07cc95b93b11c6460b26c3808ada4c233b823cd",
+    "erc1155TokenId": 2
   }
 ]
