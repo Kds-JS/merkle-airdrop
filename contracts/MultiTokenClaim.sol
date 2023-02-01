@@ -296,6 +296,8 @@ contract MultiTokenClaim is Pausable, ERC1155Holder, ERC721Holder, AccessControl
         return nftList;
     }
 
+    function addAVAX() external payable {}
+
     function withdraw() external onlyAdmin {
         payable(msg.sender).transfer(address(this).balance);
     }
