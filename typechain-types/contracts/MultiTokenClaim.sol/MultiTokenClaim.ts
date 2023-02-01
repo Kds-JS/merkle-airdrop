@@ -33,6 +33,7 @@ export interface MultiTokenClaimInterface extends utils.Interface {
     "DEFAULT_ADMIN_ROLE()": FunctionFragment;
     "ERC1155ClaimedByContractAddress(address,address,uint256)": FunctionFragment;
     "ROOT_UPDATER()": FunctionFragment;
+    "addAVAX()": FunctionFragment;
     "addRootUpdater(address)": FunctionFragment;
     "adminWithdraw(address[],address[],uint256[][],uint8[])": FunctionFragment;
     "amountClaimedAVAX(address)": FunctionFragment;
@@ -73,6 +74,7 @@ export interface MultiTokenClaimInterface extends utils.Interface {
       | "DEFAULT_ADMIN_ROLE"
       | "ERC1155ClaimedByContractAddress"
       | "ROOT_UPDATER"
+      | "addAVAX"
       | "addRootUpdater"
       | "adminWithdraw"
       | "amountClaimedAVAX"
@@ -124,6 +126,7 @@ export interface MultiTokenClaimInterface extends utils.Interface {
     functionFragment: "ROOT_UPDATER",
     values?: undefined
   ): string;
+  encodeFunctionData(functionFragment: "addAVAX", values?: undefined): string;
   encodeFunctionData(
     functionFragment: "addRootUpdater",
     values: [PromiseOrValue<string>]
@@ -298,6 +301,7 @@ export interface MultiTokenClaimInterface extends utils.Interface {
     functionFragment: "ROOT_UPDATER",
     data: BytesLike
   ): Result;
+  decodeFunctionResult(functionFragment: "addAVAX", data: BytesLike): Result;
   decodeFunctionResult(
     functionFragment: "addRootUpdater",
     data: BytesLike
@@ -619,6 +623,10 @@ export interface MultiTokenClaim extends BaseContract {
 
     ROOT_UPDATER(overrides?: CallOverrides): Promise<[string]>;
 
+    addAVAX(
+      overrides?: PayableOverrides & { from?: PromiseOrValue<string> }
+    ): Promise<ContractTransaction>;
+
     addRootUpdater(
       _address: PromiseOrValue<string>,
       overrides?: Overrides & { from?: PromiseOrValue<string> }
@@ -809,6 +817,10 @@ export interface MultiTokenClaim extends BaseContract {
 
   ROOT_UPDATER(overrides?: CallOverrides): Promise<string>;
 
+  addAVAX(
+    overrides?: PayableOverrides & { from?: PromiseOrValue<string> }
+  ): Promise<ContractTransaction>;
+
   addRootUpdater(
     _address: PromiseOrValue<string>,
     overrides?: Overrides & { from?: PromiseOrValue<string> }
@@ -998,6 +1010,8 @@ export interface MultiTokenClaim extends BaseContract {
     ): Promise<BigNumber>;
 
     ROOT_UPDATER(overrides?: CallOverrides): Promise<string>;
+
+    addAVAX(overrides?: CallOverrides): Promise<void>;
 
     addRootUpdater(
       _address: PromiseOrValue<string>,
@@ -1304,6 +1318,10 @@ export interface MultiTokenClaim extends BaseContract {
 
     ROOT_UPDATER(overrides?: CallOverrides): Promise<BigNumber>;
 
+    addAVAX(
+      overrides?: PayableOverrides & { from?: PromiseOrValue<string> }
+    ): Promise<BigNumber>;
+
     addRootUpdater(
       _address: PromiseOrValue<string>,
       overrides?: Overrides & { from?: PromiseOrValue<string> }
@@ -1496,6 +1514,10 @@ export interface MultiTokenClaim extends BaseContract {
     ): Promise<PopulatedTransaction>;
 
     ROOT_UPDATER(overrides?: CallOverrides): Promise<PopulatedTransaction>;
+
+    addAVAX(
+      overrides?: PayableOverrides & { from?: PromiseOrValue<string> }
+    ): Promise<PopulatedTransaction>;
 
     addRootUpdater(
       _address: PromiseOrValue<string>,

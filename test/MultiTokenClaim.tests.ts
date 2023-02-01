@@ -205,7 +205,7 @@ describe("Unit tests of MultiTokenClaim contract :", async () => {
         for (let i = 0; i < 11; i++) {
             let signer = ethers.Wallet.createRandom();
             signer = signer.connect(ethers.provider);
-            await eth_accounts.sendTransaction({to: signer.address, value: ethers.utils.parseEther("2")});
+            await eth_accounts.sendTransaction({to: signer.address, value: ethers.utils.parseEther("20")});
             accounts.push(signer);
         }
 
@@ -499,12 +499,7 @@ describe("Unit tests of MultiTokenClaim contract :", async () => {
         });
 
         it("Should be able to receive AVAX tokens", async () => {
-
-            await network.provider.request({
-                method: 'hardhat_setBalance',
-                params: [multiTokenClaim.address, ethers.utils.parseEther('10').toHexString()],
-            })
-
+            await multiTokenClaim.connect(owner).addAVAX({value: ethers.utils.parseEther("10")});
             expect(await ethers.provider.getBalance(multiTokenClaim.address)).to.be.equal(ethers.utils.parseEther("10"));
         });
     });
