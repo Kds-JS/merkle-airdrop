@@ -67,15 +67,15 @@ contract MultiTokenClaim is Pausable, ERC1155Holder, ERC721Holder, AccessControl
     * @param bytes32[] calldata merkleProof : merkle proof
     */
     function claimERC20(address contractAddress, uint256 amount, bytes32[] calldata merkleProof) public whenNotPaused {
-        require(IERC20(contractAddress).balanceOf(address(this)) >= amount, "Contract doesn't have enough tokens");
+        uint256 claimableAmount = amount - amountClaimedByContractAddress[contractAddress][msg.sender];
+        require(claimableAmount > 0, 'Nothing to claim.');
+        require(IERC20(contractAddress).balanceOf(address(this)) >= claimableAmount, "Contract doesn't have enough tokens");
 
         bytes32 node = keccak256(abi.encodePacked(contractAddress, msg.sender, amount));
         bool isValidProof = MerkleProof.verifyCalldata(merkleProof, merkleRootERC20, node);
         require(isValidProof, 'Invalid proof.');
 
-        require(amountClaimedByContractAddress[contractAddress][msg.sender] < amount, 'Nothing to claim.');
-        uint256 claimableAmount = amount - amountClaimedByContractAddress[contractAddress][msg.sender];
-        amountClaimedByContractAddress[contractAddress][msg.sender] += amount;
+        amountClaimedByContractAddress[contractAddress][msg.sender] += claimableAmount;
         IERC20(contractAddress).transfer(msg.sender, claimableAmount);
 
         emit ERC20Claimed(contractAddress, msg.sender, claimableAmount);
@@ -88,15 +88,15 @@ contract MultiTokenClaim is Pausable, ERC1155Holder, ERC721Holder, AccessControl
     * @param bytes32[] calldata merkleProof : merkle proof
     */
     function claimERC721(address contractAddress, uint256 amount, bytes32[] calldata merkleProof) public whenNotPaused {
-        require(IERC721(contractAddress).balanceOf(address(this)) >= amount, "Contract doesn't have enough tokens");
+        uint256 claimableAmount = amount - amountClaimedByContractAddress[contractAddress][msg.sender];
+        require(claimableAmount > 0, 'Nothing to claim.');
+        require(IERC721(contractAddress).balanceOf(address(this)) >= claimableAmount, "Contract doesn't have enough tokens");
 
         bytes32 node = keccak256(abi.encodePacked(contractAddress, msg.sender, amount));
         bool isValidProof = MerkleProof.verifyCalldata(merkleProof, merkleRootERC721, node);
         require(isValidProof, 'Invalid proof.');
 
-        require(amountClaimedByContractAddress[contractAddress][msg.sender] < amount, 'Nothing to claim.');
-        uint256 claimableAmount = amount - amountClaimedByContractAddress[contractAddress][msg.sender];
-        amountClaimedByContractAddress[contractAddress][msg.sender] += amount;
+        amountClaimedByContractAddress[contractAddress][msg.sender] += claimableAmount;
 
         for (uint i = 0; i < claimableAmount; i++) {
             uint256[] memory tokenIds = getERC721TokenListOfContract(contractAddress);
@@ -116,15 +116,16 @@ contract MultiTokenClaim is Pausable, ERC1155Holder, ERC721Holder, AccessControl
     * @param bytes32[] calldata merkleProof : merkle proof
     */
     function claimERC1155(address contractAddress, uint256 tokenId, uint256 amount, bytes32[] calldata merkleProof) public whenNotPaused {
-        require(IERC1155(contractAddress).balanceOf(address(this), tokenId) >= amount, "Contract doesn't have enough tokens");
+        uint256 claimableAmount = amount - ERC1155ClaimedByContractAddress[contractAddress][msg.sender][tokenId];
+        require(claimableAmount > 0, 'Nothing to claim.');
+
+        require(IERC1155(contractAddress).balanceOf(address(this), tokenId) >= claimableAmount, "Contract doesn't have enough tokens");
 
         bytes32 node = keccak256(abi.encodePacked(contractAddress, msg.sender, tokenId, amount));
         bool isValidProof = MerkleProof.verifyCalldata(merkleProof, merkleRootERC1155, node);
         require(isValidProof, 'Invalid proof.');
 
-        require(ERC1155ClaimedByContractAddress[contractAddress][msg.sender][tokenId] < amount, 'Nothing to claim.');
-        uint256 claimableAmount = amount - ERC1155ClaimedByContractAddress[contractAddress][msg.sender][tokenId];
-        ERC1155ClaimedByContractAddress[contractAddress][msg.sender][tokenId] += amount;
+        ERC1155ClaimedByContractAddress[contractAddress][msg.sender][tokenId] += claimableAmount;
 
         IERC1155(contractAddress).safeTransferFrom(address(this), msg.sender, tokenId, claimableAmount, "");
 
@@ -137,15 +138,16 @@ contract MultiTokenClaim is Pausable, ERC1155Holder, ERC721Holder, AccessControl
     * @param bytes32[] calldata merkleProof : merkle proof
     */
     function claimAVAX(uint256 amount, bytes32[] calldata merkleProof) public payable whenNotPaused {
+        uint256 claimableAmount = amount - amountClaimedAVAX[msg.sender];
+        require(claimableAmount > 0, 'Nothing to claim.');
+
         require(amount <= address(this).balance, "Contract doesn't have enough tokens");
 
         bytes32 node = keccak256(abi.encodePacked(msg.sender, amount));
         bool isValidProof = MerkleProof.verifyCalldata(merkleProof, merkleRootAVAX, node);
         require(isValidProof, 'Invalid proof.');
 
-        require(amountClaimedAVAX[msg.sender] < amount, 'Nothing to claim.');
-        uint256 claimableAmount = amount - amountClaimedAVAX[msg.sender];
-        amountClaimedAVAX[msg.sender] += amount;
+        amountClaimedAVAX[msg.sender] += claimableAmount;
 
         payable(msg.sender).transfer(claimableAmount);
         emit AVAXClaimed(msg.sender, claimableAmount);
