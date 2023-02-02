@@ -137,11 +137,11 @@ contract MultiTokenClaim is Pausable, ERC1155Holder, ERC721Holder, AccessControl
     * @param uint256 amount : amount of AVAX
     * @param bytes32[] calldata merkleProof : merkle proof
     */
-    function claimAVAX(uint256 amount, bytes32[] calldata merkleProof) public payable whenNotPaused {
+    function claimAVAX(uint256 amount, bytes32[] calldata merkleProof) public whenNotPaused {
         uint256 claimableAmount = amount - amountClaimedAVAX[msg.sender];
         require(claimableAmount > 0, 'Nothing to claim.');
 
-        require(amount <= address(this).balance, "Contract doesn't have enough tokens");
+        require(address(this).balance >= claimableAmount, "Contract doesn't have enough tokens");
 
         bytes32 node = keccak256(abi.encodePacked(msg.sender, amount));
         bool isValidProof = MerkleProof.verifyCalldata(merkleProof, merkleRootAVAX, node);

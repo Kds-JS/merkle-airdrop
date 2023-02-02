@@ -663,7 +663,7 @@ export interface MultiTokenClaim extends BaseContract {
     claimAVAX(
       amount: PromiseOrValue<BigNumberish>,
       merkleProof: PromiseOrValue<BytesLike>[],
-      overrides?: PayableOverrides & { from?: PromiseOrValue<string> }
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<ContractTransaction>;
 
     claimERC1155(
@@ -857,7 +857,7 @@ export interface MultiTokenClaim extends BaseContract {
   claimAVAX(
     amount: PromiseOrValue<BigNumberish>,
     merkleProof: PromiseOrValue<BytesLike>[],
-    overrides?: PayableOverrides & { from?: PromiseOrValue<string> }
+    overrides?: Overrides & { from?: PromiseOrValue<string> }
   ): Promise<ContractTransaction>;
 
   claimERC1155(
@@ -1358,7 +1358,7 @@ export interface MultiTokenClaim extends BaseContract {
     claimAVAX(
       amount: PromiseOrValue<BigNumberish>,
       merkleProof: PromiseOrValue<BytesLike>[],
-      overrides?: PayableOverrides & { from?: PromiseOrValue<string> }
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<BigNumber>;
 
     claimERC1155(
@@ -1555,7 +1555,7 @@ export interface MultiTokenClaim extends BaseContract {
     claimAVAX(
       amount: PromiseOrValue<BigNumberish>,
       merkleProof: PromiseOrValue<BytesLike>[],
-      overrides?: PayableOverrides & { from?: PromiseOrValue<string> }
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<PopulatedTransaction>;
 
     claimERC1155(
