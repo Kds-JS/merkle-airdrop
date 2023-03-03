@@ -19,6 +19,7 @@ contract MultiTokenClaim is Pausable, ERC1155Holder, ERC721Holder, AccessControl
     mapping(address => mapping(address => uint256)) public amountClaimedByContractAddress; // @notice Mapping of contract address to user address to claimed amount
     mapping(address => mapping(address => mapping(uint => uint))) public ERC1155ClaimedByContractAddress; // @notice Mapping of contract address to user address to ERC1155 token ID to claimed amount
     mapping(address => uint) public amountClaimedAVAX; // @notice Mapping of user address to claimed AVAX amount
+    mapping(address => uint) public startIdByContractAddress; // @notice Mapping of contract address to started ID
 
     // @notice ERC20 events, claimed and merkle root updated
     event ERC20Claimed(address indexed contractAddress, address indexed account, uint256 amount);
@@ -222,6 +223,22 @@ contract MultiTokenClaim is Pausable, ERC1155Holder, ERC721Holder, AccessControl
     }
 
     /*
+    * @notice Admin function to recover ERC721 assets on this contract by address
+    * @param address contractAddresses : contract addresses
+    * @param address toAddress : addresses to send assets
+    * @param uint256[][] calldata tokenIds : array of array of token IDs (use for ERC1155, set 0 for ERC20/ERC721)
+    */
+    function adminWithdrawERC721 (
+        address contractAddress,
+        address toAddress,
+        uint256[] calldata tokenIds
+    ) external onlyAdmin {
+        for (uint i = 0; i < tokenIds.length; i++) {
+            IERC721(contractAddress).transferFrom(address(this), toAddress, tokenIds[i]);
+        }
+    }
+
+    /*
     * @notice Updates the merkle root ERC20
     * @param bytes32 _merkleRootERC20 : merkle root
     */
@@ -258,6 +275,15 @@ contract MultiTokenClaim is Pausable, ERC1155Holder, ERC721Holder, AccessControl
     }
 
     /*
+    * @notice Update start token ID by contract address
+    * @param address contractAddress : contract address
+    * @param uint256 startTokenId : start token ID
+    */
+    function updateStartId(address contractAddress, uint256 startTokenId) external onlyAdmin {
+        startIdByContractAddress[contractAddress] = startTokenId;
+    }
+
+    /*
     * @notice Add 'ROOT_UPDATER' role to address
     * @param address _address : address
     */
@@ -283,7 +309,9 @@ contract MultiTokenClaim is Pausable, ERC1155Holder, ERC721Holder, AccessControl
         uint256[] memory tmpList = new uint256[](totalSupply);
         uint256 counter = 0;
 
-        for (uint256 i = 0; i < totalSupply; i++) {
+        uint256 startId = startIdByContractAddress[contractAddress];
+
+        for (uint256 i = startId; i < totalSupply + startId; i++) {
             if (IERC721(contractAddress).ownerOf(i) == address(this)) {
                 tmpList[counter] = i;
                 counter++;

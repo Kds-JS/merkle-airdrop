@@ -1,7 +1,6 @@
-import {ethers, network} from "hardhat";
+import {ethers} from "hardhat";
 import {MerkleTree} from "merkletreejs";
 import {expect} from "chai";
-import {copyFileSync} from "fs";
 
 const keccak256 = require("keccak256");
 
@@ -216,9 +215,10 @@ describe("Unit tests of MultiTokenClaim contract :", async () => {
         ERC20Contract_1 = await USDTest.connect(owner).deploy();
         ERC20Contract_2 = await USDTest.connect(owner).deploy();
 
-        const NFTest = await ethers.getContractFactory("NFTest");
-        ERC721Contract_1 = await NFTest.connect(owner).deploy();
-        ERC721Contract_2 = await NFTest.connect(owner).deploy();
+        const NFTest_1 = await ethers.getContractFactory("NFTest");
+        const NFTest_2 = await ethers.getContractFactory("NFTestKalao");
+        ERC721Contract_1 = await NFTest_1.connect(owner).deploy();
+        ERC721Contract_2 = await NFTest_2.connect(owner).deploy();
 
         const sNFTest = await ethers.getContractFactory("sNFTest");
         ERC1155Contract_1 = await sNFTest.connect(owner).deploy();
@@ -364,6 +364,12 @@ describe("Unit tests of MultiTokenClaim contract :", async () => {
             multiTokenClaim = await MultiTokenClaim.connect(owner).deploy();
             expect(multiTokenClaim.address).to.not.be.undefined;
         });
+
+        it("Should be able to update start id for NFT contract.", async () => {
+            await multiTokenClaim.connect(owner).updateStartId(ERC721Contract_2.address, 1);
+            expect(await multiTokenClaim.startIdByContractAddress(ERC721Contract_2.address)).to.be.equal(1);
+        });
+
 
         describe("Roles", () => {
             it("Should revert with 'Only admin can call this function' when non-owner tries to add 'ROOT_UPDATER' to user.", async () => {

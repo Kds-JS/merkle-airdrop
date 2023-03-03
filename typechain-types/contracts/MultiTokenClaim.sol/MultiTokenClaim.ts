@@ -36,6 +36,7 @@ export interface MultiTokenClaimInterface extends utils.Interface {
     "addAVAX()": FunctionFragment;
     "addRootUpdater(address)": FunctionFragment;
     "adminWithdraw(address[],address[],uint256[][],uint8[])": FunctionFragment;
+    "adminWithdrawERC721(address,address,uint256[])": FunctionFragment;
     "amountClaimedAVAX(address)": FunctionFragment;
     "amountClaimedByContractAddress(address,address)": FunctionFragment;
     "batchClaim(address[],uint256[],uint256[],bytes32[][],uint8[])": FunctionFragment;
@@ -60,12 +61,14 @@ export interface MultiTokenClaimInterface extends utils.Interface {
     "removeRootUpdater(address)": FunctionFragment;
     "renounceRole(bytes32,address)": FunctionFragment;
     "revokeRole(bytes32,address)": FunctionFragment;
+    "startIdByContractAddress(address)": FunctionFragment;
     "supportsInterface(bytes4)": FunctionFragment;
     "unpause()": FunctionFragment;
     "updateMerkleRootAVAX(bytes32)": FunctionFragment;
     "updateMerkleRootERC1155(bytes32)": FunctionFragment;
     "updateMerkleRootERC20(bytes32)": FunctionFragment;
     "updateMerkleRootERC721(bytes32)": FunctionFragment;
+    "updateStartId(address,uint256)": FunctionFragment;
     "withdraw()": FunctionFragment;
   };
 
@@ -77,6 +80,7 @@ export interface MultiTokenClaimInterface extends utils.Interface {
       | "addAVAX"
       | "addRootUpdater"
       | "adminWithdraw"
+      | "adminWithdrawERC721"
       | "amountClaimedAVAX"
       | "amountClaimedByContractAddress"
       | "batchClaim"
@@ -101,12 +105,14 @@ export interface MultiTokenClaimInterface extends utils.Interface {
       | "removeRootUpdater"
       | "renounceRole"
       | "revokeRole"
+      | "startIdByContractAddress"
       | "supportsInterface"
       | "unpause"
       | "updateMerkleRootAVAX"
       | "updateMerkleRootERC1155"
       | "updateMerkleRootERC20"
       | "updateMerkleRootERC721"
+      | "updateStartId"
       | "withdraw"
   ): FunctionFragment;
 
@@ -137,6 +143,14 @@ export interface MultiTokenClaimInterface extends utils.Interface {
       PromiseOrValue<string>[],
       PromiseOrValue<string>[],
       PromiseOrValue<BigNumberish>[][],
+      PromiseOrValue<BigNumberish>[]
+    ]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "adminWithdrawERC721",
+    values: [
+      PromiseOrValue<string>,
+      PromiseOrValue<string>,
       PromiseOrValue<BigNumberish>[]
     ]
   ): string;
@@ -267,6 +281,10 @@ export interface MultiTokenClaimInterface extends utils.Interface {
     values: [PromiseOrValue<BytesLike>, PromiseOrValue<string>]
   ): string;
   encodeFunctionData(
+    functionFragment: "startIdByContractAddress",
+    values: [PromiseOrValue<string>]
+  ): string;
+  encodeFunctionData(
     functionFragment: "supportsInterface",
     values: [PromiseOrValue<BytesLike>]
   ): string;
@@ -286,6 +304,10 @@ export interface MultiTokenClaimInterface extends utils.Interface {
   encodeFunctionData(
     functionFragment: "updateMerkleRootERC721",
     values: [PromiseOrValue<BytesLike>]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "updateStartId",
+    values: [PromiseOrValue<string>, PromiseOrValue<BigNumberish>]
   ): string;
   encodeFunctionData(functionFragment: "withdraw", values?: undefined): string;
 
@@ -308,6 +330,10 @@ export interface MultiTokenClaimInterface extends utils.Interface {
   ): Result;
   decodeFunctionResult(
     functionFragment: "adminWithdraw",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "adminWithdrawERC721",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -380,6 +406,10 @@ export interface MultiTokenClaimInterface extends utils.Interface {
   ): Result;
   decodeFunctionResult(functionFragment: "revokeRole", data: BytesLike): Result;
   decodeFunctionResult(
+    functionFragment: "startIdByContractAddress",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
     functionFragment: "supportsInterface",
     data: BytesLike
   ): Result;
@@ -398,6 +428,10 @@ export interface MultiTokenClaimInterface extends utils.Interface {
   ): Result;
   decodeFunctionResult(
     functionFragment: "updateMerkleRootERC721",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "updateStartId",
     data: BytesLike
   ): Result;
   decodeFunctionResult(functionFragment: "withdraw", data: BytesLike): Result;
@@ -640,6 +674,13 @@ export interface MultiTokenClaim extends BaseContract {
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<ContractTransaction>;
 
+    adminWithdrawERC721(
+      contractAddress: PromiseOrValue<string>,
+      toAddress: PromiseOrValue<string>,
+      tokenIds: PromiseOrValue<BigNumberish>[],
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
+    ): Promise<ContractTransaction>;
+
     amountClaimedAVAX(
       arg0: PromiseOrValue<string>,
       overrides?: CallOverrides
@@ -772,6 +813,11 @@ export interface MultiTokenClaim extends BaseContract {
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<ContractTransaction>;
 
+    startIdByContractAddress(
+      arg0: PromiseOrValue<string>,
+      overrides?: CallOverrides
+    ): Promise<[BigNumber]>;
+
     supportsInterface(
       interfaceId: PromiseOrValue<BytesLike>,
       overrides?: CallOverrides
@@ -798,6 +844,12 @@ export interface MultiTokenClaim extends BaseContract {
 
     updateMerkleRootERC721(
       _merkleRootERC721: PromiseOrValue<BytesLike>,
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
+    ): Promise<ContractTransaction>;
+
+    updateStartId(
+      contractAddress: PromiseOrValue<string>,
+      startTokenId: PromiseOrValue<BigNumberish>,
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<ContractTransaction>;
 
@@ -831,6 +883,13 @@ export interface MultiTokenClaim extends BaseContract {
     toAddresses: PromiseOrValue<string>[],
     tokenIds: PromiseOrValue<BigNumberish>[][],
     tokenTypes: PromiseOrValue<BigNumberish>[],
+    overrides?: Overrides & { from?: PromiseOrValue<string> }
+  ): Promise<ContractTransaction>;
+
+  adminWithdrawERC721(
+    contractAddress: PromiseOrValue<string>,
+    toAddress: PromiseOrValue<string>,
+    tokenIds: PromiseOrValue<BigNumberish>[],
     overrides?: Overrides & { from?: PromiseOrValue<string> }
   ): Promise<ContractTransaction>;
 
@@ -966,6 +1025,11 @@ export interface MultiTokenClaim extends BaseContract {
     overrides?: Overrides & { from?: PromiseOrValue<string> }
   ): Promise<ContractTransaction>;
 
+  startIdByContractAddress(
+    arg0: PromiseOrValue<string>,
+    overrides?: CallOverrides
+  ): Promise<BigNumber>;
+
   supportsInterface(
     interfaceId: PromiseOrValue<BytesLike>,
     overrides?: CallOverrides
@@ -992,6 +1056,12 @@ export interface MultiTokenClaim extends BaseContract {
 
   updateMerkleRootERC721(
     _merkleRootERC721: PromiseOrValue<BytesLike>,
+    overrides?: Overrides & { from?: PromiseOrValue<string> }
+  ): Promise<ContractTransaction>;
+
+  updateStartId(
+    contractAddress: PromiseOrValue<string>,
+    startTokenId: PromiseOrValue<BigNumberish>,
     overrides?: Overrides & { from?: PromiseOrValue<string> }
   ): Promise<ContractTransaction>;
 
@@ -1023,6 +1093,13 @@ export interface MultiTokenClaim extends BaseContract {
       toAddresses: PromiseOrValue<string>[],
       tokenIds: PromiseOrValue<BigNumberish>[][],
       tokenTypes: PromiseOrValue<BigNumberish>[],
+      overrides?: CallOverrides
+    ): Promise<void>;
+
+    adminWithdrawERC721(
+      contractAddress: PromiseOrValue<string>,
+      toAddress: PromiseOrValue<string>,
+      tokenIds: PromiseOrValue<BigNumberish>[],
       overrides?: CallOverrides
     ): Promise<void>;
 
@@ -1156,6 +1233,11 @@ export interface MultiTokenClaim extends BaseContract {
       overrides?: CallOverrides
     ): Promise<void>;
 
+    startIdByContractAddress(
+      arg0: PromiseOrValue<string>,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
+
     supportsInterface(
       interfaceId: PromiseOrValue<BytesLike>,
       overrides?: CallOverrides
@@ -1180,6 +1262,12 @@ export interface MultiTokenClaim extends BaseContract {
 
     updateMerkleRootERC721(
       _merkleRootERC721: PromiseOrValue<BytesLike>,
+      overrides?: CallOverrides
+    ): Promise<void>;
+
+    updateStartId(
+      contractAddress: PromiseOrValue<string>,
+      startTokenId: PromiseOrValue<BigNumberish>,
       overrides?: CallOverrides
     ): Promise<void>;
 
@@ -1335,6 +1423,13 @@ export interface MultiTokenClaim extends BaseContract {
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<BigNumber>;
 
+    adminWithdrawERC721(
+      contractAddress: PromiseOrValue<string>,
+      toAddress: PromiseOrValue<string>,
+      tokenIds: PromiseOrValue<BigNumberish>[],
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
+    ): Promise<BigNumber>;
+
     amountClaimedAVAX(
       arg0: PromiseOrValue<string>,
       overrides?: CallOverrides
@@ -1467,6 +1562,11 @@ export interface MultiTokenClaim extends BaseContract {
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<BigNumber>;
 
+    startIdByContractAddress(
+      arg0: PromiseOrValue<string>,
+      overrides?: CallOverrides
+    ): Promise<BigNumber>;
+
     supportsInterface(
       interfaceId: PromiseOrValue<BytesLike>,
       overrides?: CallOverrides
@@ -1493,6 +1593,12 @@ export interface MultiTokenClaim extends BaseContract {
 
     updateMerkleRootERC721(
       _merkleRootERC721: PromiseOrValue<BytesLike>,
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
+    ): Promise<BigNumber>;
+
+    updateStartId(
+      contractAddress: PromiseOrValue<string>,
+      startTokenId: PromiseOrValue<BigNumberish>,
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<BigNumber>;
 
@@ -1529,6 +1635,13 @@ export interface MultiTokenClaim extends BaseContract {
       toAddresses: PromiseOrValue<string>[],
       tokenIds: PromiseOrValue<BigNumberish>[][],
       tokenTypes: PromiseOrValue<BigNumberish>[],
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
+    ): Promise<PopulatedTransaction>;
+
+    adminWithdrawERC721(
+      contractAddress: PromiseOrValue<string>,
+      toAddress: PromiseOrValue<string>,
+      tokenIds: PromiseOrValue<BigNumberish>[],
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<PopulatedTransaction>;
 
@@ -1664,6 +1777,11 @@ export interface MultiTokenClaim extends BaseContract {
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<PopulatedTransaction>;
 
+    startIdByContractAddress(
+      arg0: PromiseOrValue<string>,
+      overrides?: CallOverrides
+    ): Promise<PopulatedTransaction>;
+
     supportsInterface(
       interfaceId: PromiseOrValue<BytesLike>,
       overrides?: CallOverrides
@@ -1690,6 +1808,12 @@ export interface MultiTokenClaim extends BaseContract {
 
     updateMerkleRootERC721(
       _merkleRootERC721: PromiseOrValue<BytesLike>,
+      overrides?: Overrides & { from?: PromiseOrValue<string> }
+    ): Promise<PopulatedTransaction>;
+
+    updateStartId(
+      contractAddress: PromiseOrValue<string>,
+      startTokenId: PromiseOrValue<BigNumberish>,
       overrides?: Overrides & { from?: PromiseOrValue<string> }
     ): Promise<PopulatedTransaction>;
 

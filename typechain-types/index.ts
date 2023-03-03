@@ -56,6 +56,8 @@ export type { MerkleAirdrop } from "./contracts/other/MerkleSingleAirdrop.sol/Me
 export { MerkleAirdrop__factory } from "./factories/contracts/other/MerkleSingleAirdrop.sol/MerkleAirdrop__factory";
 export type { NFTest } from "./contracts/other/NFTest";
 export { NFTest__factory } from "./factories/contracts/other/NFTest__factory";
+export type { NFTestKalao } from "./contracts/other/NFTestKalao";
+export { NFTestKalao__factory } from "./factories/contracts/other/NFTestKalao__factory";
 export type { SNFTest } from "./contracts/other/SNFTest";
 export { SNFTest__factory } from "./factories/contracts/other/SNFTest__factory";
 export type { USDTest } from "./contracts/other/USDTest";

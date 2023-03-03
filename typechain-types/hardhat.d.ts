@@ -125,6 +125,10 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.NFTest__factory>;
     getContractFactory(
+      name: "NFTestKalao",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.NFTestKalao__factory>;
+    getContractFactory(
       name: "SNFTest",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.SNFTest__factory>;
@@ -273,6 +277,11 @@ declare module "hardhat/types/runtime" {
       address: string,
       signer?: ethers.Signer
     ): Promise<Contracts.NFTest>;
+    getContractAt(
+      name: "NFTestKalao",
+      address: string,
+      signer?: ethers.Signer
+    ): Promise<Contracts.NFTestKalao>;
     getContractAt(
       name: "SNFTest",
       address: string,
