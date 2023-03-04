@@ -100,8 +100,14 @@ contract MultiTokenClaim is Pausable, ERC1155Holder, ERC721Holder, AccessControl
         amountClaimedByContractAddress[contractAddress][msg.sender] += claimableAmount;
 
         for (uint i = 0; i < claimableAmount; i++) {
+            uint16 randomIdToMint;
+
             uint256[] memory tokenIds = getERC721TokenListOfContract(contractAddress);
-            uint16 randomIdToMint = uint16(tokenIds[random(tokenIds.length - 1)]);
+            if (tokenIds.length > 1) {
+                randomIdToMint = uint16(tokenIds[random(tokenIds.length - 1)]);
+            } else {
+                randomIdToMint = uint16(tokenIds[0]);
+            }
 
             IERC721(contractAddress).transferFrom(address(this), msg.sender, randomIdToMint);
         }
