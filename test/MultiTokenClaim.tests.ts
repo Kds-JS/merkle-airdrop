@@ -1,7 +1,6 @@
-import {ethers, network} from "hardhat";
+import {ethers} from "hardhat";
 import {MerkleTree} from "merkletreejs";
 import {expect} from "chai";
-import {copyFileSync} from "fs";
 
 const keccak256 = require("keccak256");
 
@@ -205,7 +204,7 @@ describe("Unit tests of MultiTokenClaim contract :", async () => {
         for (let i = 0; i < 11; i++) {
             let signer = ethers.Wallet.createRandom();
             signer = signer.connect(ethers.provider);
-            await eth_accounts.sendTransaction({to: signer.address, value: ethers.utils.parseEther("2")});
+            await eth_accounts.sendTransaction({to: signer.address, value: ethers.utils.parseEther("20")});
             accounts.push(signer);
         }
 
@@ -216,9 +215,10 @@ describe("Unit tests of MultiTokenClaim contract :", async () => {
         ERC20Contract_1 = await USDTest.connect(owner).deploy();
         ERC20Contract_2 = await USDTest.connect(owner).deploy();
 
-        const NFTest = await ethers.getContractFactory("NFTest");
-        ERC721Contract_1 = await NFTest.connect(owner).deploy();
-        ERC721Contract_2 = await NFTest.connect(owner).deploy();
+        const NFTest_1 = await ethers.getContractFactory("NFTest");
+        const NFTest_2 = await ethers.getContractFactory("NFTestKalao");
+        ERC721Contract_1 = await NFTest_1.connect(owner).deploy();
+        ERC721Contract_2 = await NFTest_2.connect(owner).deploy();
 
         const sNFTest = await ethers.getContractFactory("sNFTest");
         ERC1155Contract_1 = await sNFTest.connect(owner).deploy();
@@ -365,6 +365,12 @@ describe("Unit tests of MultiTokenClaim contract :", async () => {
             expect(multiTokenClaim.address).to.not.be.undefined;
         });
 
+        it("Should be able to update start id for NFT contract.", async () => {
+            await multiTokenClaim.connect(owner).updateStartId(ERC721Contract_2.address, 1);
+            expect(await multiTokenClaim.startIdByContractAddress(ERC721Contract_2.address)).to.be.equal(1);
+        });
+
+
         describe("Roles", () => {
             it("Should revert with 'Only admin can call this function' when non-owner tries to add 'ROOT_UPDATER' to user.", async () => {
                 await expect(multiTokenClaim.connect(accounts[1]).addRootUpdater(accounts[1].address)).to.be.revertedWith("Only admin can call this function");
@@ -499,12 +505,7 @@ describe("Unit tests of MultiTokenClaim contract :", async () => {
         });
 
         it("Should be able to receive AVAX tokens", async () => {
-
-            await network.provider.request({
-                method: 'hardhat_setBalance',
-                params: [multiTokenClaim.address, ethers.utils.parseEther('10').toHexString()],
-            })
-
+            await multiTokenClaim.connect(owner).addAVAX({value: ethers.utils.parseEther("10")});
             expect(await ethers.provider.getBalance(multiTokenClaim.address)).to.be.equal(ethers.utils.parseEther("10"));
         });
     });
@@ -841,7 +842,7 @@ describe("Unit tests of MultiTokenClaim contract :", async () => {
             }
         });
 
-        it("Should be able to claim tokens (5 lasts accounts) with batchClaim.", async () => {
+        it("Should be able to claim tokens (5 lasts accounts) with batchClaim and to emit 'BatchClaimed' event.", async () => {
             for (let i = 5; i < 10; i++) {
                 let [merkleProofERC20, lineERC20] = getERC20MerkleProof(ERC20balancesBeforeUpdate, ERC20Contract_1.address, accounts[i].address);
                 let [merkleProofERC721, lineERC721] = getERC721MerkleProof(ERC721balancesBeforeUpdate, ERC721Contract_1.address, accounts[i].address);
@@ -870,7 +871,7 @@ describe("Unit tests of MultiTokenClaim contract :", async () => {
 
                 const balanceOfUserBeforeClaim = await ethers.provider.getBalance(accounts[i].address);
 
-                await expect(multiTokenClaim.connect(accounts[i]).batchClaim(batchContractAddresses, batchTokenIds, batchAmounts, batchMerkleProofs, batchTokenTypes)).to.not.be.reverted;
+                await expect(multiTokenClaim.connect(accounts[i]).batchClaim(batchContractAddresses, batchTokenIds, batchAmounts, batchMerkleProofs, batchTokenTypes)).to.emit(multiTokenClaim, "BatchClaimed").withArgs(accounts[i].address);
 
                 const balanceOfUserAfterClaim = await ethers.provider.getBalance(accounts[i].address);
 
